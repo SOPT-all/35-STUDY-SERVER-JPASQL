@@ -1,5 +1,17 @@
 ## 해당 강의 진행시 h2 db 서버를 키고 진행
 
+### valid 오류가 뜨지 않을때
+
+
+```java
+server:
+  error:
+    include-binding-errors: always
+    include-message: always
+
+```
+yml 에 위 코드를 추가
+
 ## 1섹션
 
 ## 2섹션
@@ -72,4 +84,9 @@ public class AnotherExampleBean implements DisposableBean {
 }
 ```
 
+출처 : https://docs.spring.io/spring-framework/reference/core/beans/factory-nature.html#beans-factory-lifecycle-initializingbean
+
+
 - init DB 를 활용하여 만들기
+
+
