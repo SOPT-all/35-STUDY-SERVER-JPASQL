@@ -1,0 +1,134 @@
+# EntityManager를 사용하는 방식과 JpaRepository인터페이스를 사용하는 방식의 차이
+
+---
+
+### 1. **EntityManager를 사용하는 방식**
+
+### 특징
+
+- **직접적인 제어**: JPA 표준 API를 직접 사용하므로, SQL 또는 JPQL을 더 세밀하게 제어할 수 있다.
+- **유연성**: 복잡한 쿼리나 특수한 데이터 처리 로직을 구현하기에 적합하다.
+- **추상화 부족**: 대부분의 CRUD 작업을 수동으로 작성해야 하며, 코드량이 많아질 수 있다.
+
+### 장점
+
+- 복잡한 JPQL, 네이티브 SQL 또는 커스텀 로직을 유연하게 작성 가능.
+- 트랜잭션 범위를 더 명확하게 관리할 수 있음.
+- JPA 이외의 다른 API 또는 데이터베이스 접근 방식을 함께 사용할 수 있음.
+
+### 단점
+
+- 반복적인 코드가 많아질 가능성 (CRUD 메서드 작성 필요).
+- 인터페이스와 다르게 재사용성이 낮음.
+- 유지보수가 어려워질 수 있음.
+
+### 예제
+
+```java
+@Repository
+public class CustomUserRepository {
+
+    @PersistenceContext
+    private EntityManager em;
+
+    public User findByUsernameString username) {
+        return em.createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)
+                 .setParameter("username", username)
+                 .getSingleResult();
+    }
+
+    public void save(User user) {
+        em.persist(user);
+    }
+}
+
+```
+
+---
+
+### 2. **JPA Repository 인터페이스를 사용하는 방식**
+
+### 특징
+
+- **추상화 제공**: Spring Data JPA가 기본적인 CRUD 및 페이징 기능을 제공하므로 개발자가 구현하지 않아도 됩니다.
+- **간결성**: 반복적인 CRUD 코드를 줄이고, 선언형 접근 방식을 제공합니다.
+- **커스텀 메서드 지원**: 메서드 이름으로 쿼리를 생성하거나, 커스텀 JPQL/네이티브 SQL을 정의할 수 있습니다.
+
+### 장점
+
+- 간단하고 표준화된 CRUD 작업 구현.
+- 메서드 이름 기반 쿼리 생성 (`findBy`, `deleteBy` 등)으로 간결한 코드 작성 가능.
+- 페이징 및 정렬 지원 (`Pageable` 인터페이스 사용).
+- 재사용성이 높음.
+
+### 단점
+
+- 복잡한 JPQL이나 네이티브 SQL을 처리하기 어려울 수 있음 (하지만 `@Query`로 해결 가능).
+- 추상화된 구조가 때로는 유연성을 제한할 수 있음.
+
+### 예제
+
+```java
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    User findByUsername(String username);
+}
+
+```
+
+---
+
+### 3. **두 접근 방식의 주요 차이**
+
+| **항목** | **EntityManager 사용** | **JPA Repository 사용** |
+| --- | --- | --- |
+| **제어 수준** | 개발자가 직접 모든 쿼리와 트랜잭션 관리 | 기본적인 CRUD와 트랜잭션은 자동으로 관리됨 |
+| **코드의 간결성** | 반복적인 코드가 많아질 수 있음 | 선언형 접근 방식으로 코드가 간결함 |
+| **복잡한 쿼리 지원** | JPQL, 네이티브 SQL 등 모든 복잡한 쿼리 처리 가능 | `@Query`를 사용해 복잡한 쿼리 처리 가능 (제한적) |
+| **학습 곡선** | JPA API에 대한 깊은 이해가 필요 | 상대적으로 쉽고 빠르게 구현 가능 |
+| **재사용성** | 특정 구현 클래스에 종속될 가능성 | 인터페이스 기반으로 재사용성과 확장성이 높음 |
+| **유연성** | 고도로 유연하며, JPA 외의 데이터 접근 방식도 혼합 가능 | 제공되는 메서드와 기능에 약간의 제약이 있음 |
+
+---
+
+### 4. **사용 선택 기준**
+
+- **EntityManager 사용을 고려할 때**:
+    - 복잡한 데이터 로직이 필요하거나 표준 CRUD 작업 외의 특별한 작업이 많을 때.
+    - 기존 레거시 시스템과 통합해야 할 경우.
+    - JPA 표준을 완벽히 이해하고 직접 제어하고 싶은 경우.
+- **JPA Repository를 사용할 때**:
+    - 일반적인 CRUD 작업과 페이징/정렬 작업이 주된 경우.
+    - 코드의 간결함과 생산성을 우선시할 때.
+    - 복잡한 로직이 많지 않고 표준화된 데이터 처리가 가능할 때.
+
+---
+
+# Transactional 어노테이션을 막 써도 될까?
+
+우리는 흔하게 데이터 수정이 필요한 메서드 트랜잭셔널 어노테이션을 사용하고 있다.
+
+그런데 우리가 늘 사용하고 있던 이 부분에 정말로 트랜잭셔널 어노테이션이 필요할까?
+
+```java
+  	@Transactional
+    public void signUp(final MemberProfileCreateRequest request) {
+        memberFinder.checkPresent(Email.from(request.email()));
+        checkPasswordFormat(request.password());
+        checkPassword(request.password(), request.passwordChecker());
+        Member member = createMember(request);
+        memberRepository.save(member);
+    }
+```
+
+위 메서드는 멤버를 생성하는 메서드다. 메서드 마지막 부분에서 멤버 객체를 save하고 있다. 이 메서드에 과연 Transactional 어노테이션을 적용해야할 까?
+
+정답은 “적용할 필요 없다.” 이다.
+
+그 이유를 알아보면 memberRepository가 사용하고 있는 save라는 메서드에 Transactional이라는 어노테이션이 기본적으로 들어가 있다. 게다가 save 이전에는 데이터의 수정없이 단순 조회 작업만 일어나고 있기 때문에 조회 부분에서 예외가 발생한다 하더라고 롤백할 데이터가 없다.
+
+따라서 서비스단 메서드에 굳이 트랜잭셔널이라는 어노테이션을 붙일 필요없다.
+
+그러면 이런 이야기가 나올 수있는데, 트랜잭셔널 어노테이션을 사용하면 어떤 메서드가 데이터를 수정하는지 쉽게 확인할 수 있다. 혹은 혹시나 save메서드 이전에 데이터 변경이 일어나는 메서드를 실수로 추가하면 어떡하냐, 이런 점을 버리고서도 트랜잭셔널 어노테이션을 굳이 안써야할 이유가 있는가? 라는 물음이 생길 수 있다.
+
+Transactional어노테이션을 서비스단에 사용한다면 그만큼 데이터베이스에 커넥션이 빠르게 생기는 것 이고, 데이터베이스 작업이 필요하지 않을때도 커넥션을 점유하고 있는 것 이다.  따라서 불필요한 자원낭비가 발생하게 된다.
