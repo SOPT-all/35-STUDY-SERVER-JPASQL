@@ -124,5 +124,3 @@ Item mergeItem = em.merge(itemParam);
     - `Command` + `E` : Recent Files" 창이 열려서 최근에 열었던 파일 목록을 보여줌.
     - `Option` + `Shift` + 마우스 드래그 : 여러 줄의 특정 컬럼(세로 영역)을 선택 가능.
     - `Command` 키를 두 번 연속으로 누르기 : Search Everywhere가 열림
-
-noneNull과의 차이
