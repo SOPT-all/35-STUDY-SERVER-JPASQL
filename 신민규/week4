@@ -1,0 +1,121 @@
+`NotEmpty`, `NonNull`, `NotNull`은 **입력 검증**과 관련된 제약 조건(Validation Constraints)으로 주로 자바의 **Bean Validation API**(예: Hibernate Validator)에서 사용됩니다. 이들은 값의 **존재 여부**와 **내용**을 다르게 검증합니다.
+
+---
+
+## 1. `@NotNull`
+- **의미**: 값이 `null`이 아니어야 함을 보장합니다.
+- **검증 대상**: 객체, 문자열, 배열, 컬렉션 등 모든 타입
+- **설명**: 값이 `null`인 경우 검증에 실패하지만, 빈 문자열(`""`)이나 비어 있는 컬렉션(`[]`)은 허용됩니다.
+
+### 사용 예시
+```java
+import javax.validation.constraints.NotNull;
+
+public class User {
+    @NotNull(message = "이름은 null일 수 없습니다.")
+    private String name;
+
+    // Getter & Setter
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+```
+
+**유효성 검사**
+```java
+User user = new User();
+user.setName(null); // @NotNull 조건 위반 -> 유효성 검사 실패
+user.setName("");   // 빈 문자열이지만 null은 아니므로 유효성 검사 성공
+```
+
+---
+
+## 2. `@NotEmpty`
+- **의미**: 값이 `null`이 아니고, 비어있지 않아야 함을 보장합니다.
+- **검증 대상**: 문자열, 컬렉션, 배열, 맵 등
+- **설명**: 값이 `null`이거나, 길이가 0인 상태(빈 문자열, 빈 컬렉션)인 경우 검증에 실패합니다.
+
+### 사용 예시
+```java
+import javax.validation.constraints.NotEmpty;
+
+public class User {
+    @NotEmpty(message = "이메일은 비어있을 수 없습니다.")
+    private String email;
+
+    // Getter & Setter
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+}
+```
+
+**유효성 검사**
+```java
+User user = new User();
+user.setEmail(null); // @NotEmpty 조건 위반 -> 유효성 검사 실패
+user.setEmail("");   // @NotEmpty 조건 위반 -> 유효성 검사 실패
+user.setEmail("test@example.com"); // 유효성 검사 성공
+```
+
+---
+
+## 3. `@NotBlank`
+- **의미**: 값이 `null`이 아니고, 공백 문자를 제외한 길이가 1 이상이어야 함을 보장합니다.
+- **검증 대상**: 문자열만
+- **설명**: 빈 문자열(`""`)과 공백으로만 이루어진 문자열(예: `"   "`)도 허용되지 않습니다.
+
+### 사용 예시
+```java
+import javax.validation.constraints.NotBlank;
+
+public class User {
+    @NotBlank(message = "비밀번호는 공백일 수 없습니다.")
+    private String password;
+
+    // Getter & Setter
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+```
+
+**유효성 검사**
+```java
+User user = new User();
+user.setPassword(null);      // @NotBlank 조건 위반 -> 유효성 검사 실패
+user.setPassword("");        // @NotBlank 조건 위반 -> 유효성 검사 실패
+user.setPassword("   ");     // @NotBlank 조건 위반 -> 유효성 검사 실패
+user.setPassword("1234");    // 유효성 검사 성공
+```
+
+---
+
+## **요약 비교**
+| 제약 조건       | `null` 체크 | 빈 값(`""` / 빈 컬렉션) | 공백만 있는 문자열 |
+|-----------------|------------|------------------------|--------------------|
+| **@NotNull**   | 위반       | 허용                   | 허용               |
+| **@NotEmpty**  | 위반       | 위반                   | 허용               |
+| **@NotBlank**  | 위반       | 위반                   | 위반               |
+
+---
+
+### 사용 시기
+- `@NotNull`: 값이 `null`인지 여부만 검사할 때 사용합니다.
+- `@NotEmpty`: 값이 `null`이 아니면서, 비어있지 않은지 검사할 때 사용합니다.
+- `@NotBlank`: 값이 `null`, 비어있음, 공백 문자열이 아닌지를 검사할 때 사용합니다.
+
+예를 들어, 입력 폼에서 사용자의 이름이 공백 없이 입력되었는지를 검사할 때는 `@NotBlank`를 사용하고, ID가 `null`이 아닌지만 확인하면 되는 경우에는 `@NotNull`을 사용합니다.
